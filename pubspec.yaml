@@ -39,6 +39,8 @@ dependencies:
   image: ^4.3.0
   flutter_esc_pos_utils: ^1.0.1
   widgets_to_image: ^1.0.0
+  get: ^4.6.6
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
