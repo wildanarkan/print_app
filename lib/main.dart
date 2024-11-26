@@ -7,12 +7,18 @@ import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
 import 'package:get/get.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:print_app/controller/print_controller.dart';
+import 'package:print_app/models/product_model.dart';
+import 'package:print_app/pages/screenshot_page.dart';
 import 'package:print_app/widgets/box_icon.dart';
 import 'package:print_app/widgets/status_item.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  initializeDateFormatting();
   runApp(const MyApp());
 }
 
@@ -29,6 +35,35 @@ class _MyAppState extends State<MyApp> {
   String? selectedDevice;
 
   final TextEditingController _txtPrintController = TextEditingController();
+
+  // Print Note
+  final TextEditingController _brandController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _cashierController = TextEditingController();
+
+  // Print Screenshot
+  final TextEditingController _nomorController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+
+  // Data produk
+  List<Product> products = [
+    Product(
+      image: 'assets/dudul1.jpeg',
+      name: 'Produk 1',
+      price: 15000,
+    ),
+    Product(
+      image: 'assets/dudul1.jpeg',
+      name: 'Produk 2',
+      price: 30000,
+    ),
+    Product(
+      image: 'assets/dudul1.jpeg',
+      name: 'Produk 3',
+      price: 20000,
+    ),
+  ];
 
   bool isFound = false;
 
@@ -152,15 +187,39 @@ class _MyAppState extends State<MyApp> {
                   titleSize: 10,
                   iconSize: 25,
                 ),
-                // const SizedBox(width: 10),
-                // BoxIcon(
-                //   onTap: () => disconnectDevice(),
-                //   icon: Icons.qr_code_2,
-                //   title: 'TEXT',
-                //   height: 80,
-                //   titleSize: 10,
-                //   iconSize: 25,
-                // ),
+              ],
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            Row(
+              children: [
+                BoxIcon(
+                  onTap: () => dialogNote(),
+                  icon: Icons.sticky_note_2,
+                  title: 'NOTE',
+                  height: 80,
+                  titleSize: 10,
+                  iconSize: 25,
+                ),
+                const SizedBox(width: 10),
+                BoxIcon(
+                  onTap: () => dialogScreenshot(),
+                  icon: Icons.camera,
+                  title: 'SCREENSHOT',
+                  height: 80,
+                  titleSize: 10,
+                  iconSize: 25,
+                ),
+                const SizedBox(width: 10),
+                BoxIcon(
+                  onTap: () => dialogShopping(),
+                  icon: Icons.shopping_cart,
+                  title: 'SHOPPING',
+                  height: 80,
+                  titleSize: 10,
+                  iconSize: 25,
+                ),
               ],
             ),
           ],
@@ -499,6 +558,133 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  String formatCurrency(int number) {
+    return "Rp ${number.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}";
+  }
+
+  Future<void> printNote({
+    required String brand,
+    required String address,
+    required String phoneNumber,
+    required String cashier,
+  }) async {
+    if (brand.isEmpty &&
+        address.isEmpty &&
+        phoneNumber.isEmpty &&
+        cashier.isEmpty) {
+      log('Data tidak boleh kosong');
+      return;
+    }
+    log('Brand : $brand');
+    log('Address : $address');
+    log('Phone Number : $phoneNumber');
+    log('Cashier : $cashier');
+    // bool isConnect = await PrintBluetoothThermal.connectionStatus;
+    // if (isConnect) {
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(size: 2, text: "$brand \n"),
+    //   );
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "$address \nTelp: $phoneNumber \n"),
+    //   );
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "================================\n"),
+    //   );
+
+    //   // Transaction Info
+    //   String dateTime = DateTime.now().toString().substring(0, 19);
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(size: 1, text: "Tanggal: $dateTime\n"),
+    //   );
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(size: 1, text: "No. Nota: INV-001\n"),
+    //   );
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(size: 1, text: "Kasir: $cashier \n"),
+    //   );
+
+    //   // Separator
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "================================\n"),
+    //   );
+
+    //   // Items
+    //   List<Map<String, dynamic>> items = [
+    //     {"name": "Ayam Geprek", "qty": 2, "price": 26000},
+    //     {"name": "Nasi Rawon", "qty": 1, "price": 11000},
+    //     {"name": "Pentol Goreng", "qty": 3, "price": 15000},
+    //     {"name": "Permen", "qty": 5, "price": 2500},
+    //     {"name": "Batagor", "qty": 2, "price": 5000},
+    //   ];
+
+    //   for (var item in items) {
+    //     String itemName = item["name"];
+    //     int qty = item["qty"];
+    //     int price = item["price"];
+    //     int total = qty * price;
+
+    //     await PrintBluetoothThermal.writeString(
+    //       printText: PrintTextSize(size: 1, text: "$itemName\n"),
+    //     );
+    //     await PrintBluetoothThermal.writeString(
+    //       printText: PrintTextSize(
+    //           size: 1,
+    //           text:
+    //               "$qty x ${formatCurrency(price)} = ${formatCurrency(total)}\n"),
+    //     );
+    //   }
+
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "--------------------------------\n"),
+    //   );
+
+    //   int subtotal = items.fold<int>(0,
+    //       (sum, item) => sum + ((item["qty"] as int) * (item["price"] as int)));
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(
+    //         size: 1, text: "Subtotal: ${formatCurrency(subtotal)}\n"),
+    //   );
+
+    //   int tax = (subtotal * 0.10).round();
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "PPN (10%): ${formatCurrency(tax)}\n"),
+    //   );
+
+    //   int grandTotal = subtotal + tax;
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(
+    //         size: 2, text: "TOTAL: ${formatCurrency(grandTotal)}\n"),
+    //   );
+
+    //   // Footer
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "================================\n"),
+    //   );
+    //   await PrintBluetoothThermal.writeString(
+    //     printText:
+    //         PrintTextSize(size: 1, text: "Terima kasih atas kunjungan Anda\n"),
+    //   );
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(
+    //         size: 1,
+    //         text:
+    //             "Barang yang sudah dibeli\ntidak dapat ditukar/dikembalikan\n"),
+    //   );
+
+    //   await PrintBluetoothThermal.writeString(
+    //     printText: PrintTextSize(size: 1, text: "\n\n\n"),
+    //   );
+    // } else {
+    //   print("Printer tidak terhubung. Status: $isConnect");
+    // }
+  }
+
   void dialogTextField(bool isLink) async {
     try {
       final status = await printController.checkStatus();
@@ -622,33 +808,18 @@ class _MyAppState extends State<MyApp> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.print_rounded,
+                        Icons.phone_android,
                         color: Colors.indigo[400],
                         size: 28,
                       ),
                     ),
                     const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Printer Status',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Current printer connection details',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
+                    const Text(
+                      'Handphone Status',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
                   ],
@@ -665,7 +836,7 @@ class _MyAppState extends State<MyApp> {
                   icon: Icons.bluetooth_rounded,
                   title: 'Bluetooth Status',
                   value: status['bluetooth'] ? 'Active' : 'Inactive',
-                  color: status['bluetooth'] ? Colors.blue : Colors.grey,
+                  color: status['bluetooth'] ? Colors.indigo : Colors.grey,
                 ),
                 const SizedBox(height: 16),
                 StatusItem(
@@ -810,7 +981,10 @@ class _MyAppState extends State<MyApp> {
                               );
                             }
                           },
-                          icon: const Icon(Icons.photo_library, size: 13,),
+                          icon: const Icon(
+                            Icons.photo_library,
+                            size: 13,
+                          ),
                           label: const Text('Gallery'),
                         ),
                       ),
@@ -844,7 +1018,10 @@ class _MyAppState extends State<MyApp> {
                               );
                             }
                           },
-                          icon: const Icon(Icons.camera_alt, size: 13,),
+                          icon: const Icon(
+                            Icons.camera_alt,
+                            size: 13,
+                          ),
                           label: const Text('Camera'),
                         ),
                       ),
@@ -905,6 +1082,571 @@ class _MyAppState extends State<MyApp> {
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
         icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
+    }
+  }
+
+  void dialogNote() async {
+    try {
+      // final status = await printController.checkStatus();
+
+      // if (!status['connection']) {
+      //   Get.snackbar(
+      //     'Failed',
+      //     'Pastikan anda sudah terhubung dengan printer',
+      //     backgroundColor: Colors.red[400],
+      //     colorText: Colors.white,
+      //     duration: const Duration(seconds: 3),
+      //     snackPosition: SnackPosition.BOTTOM,
+      //     margin: const EdgeInsets.all(16),
+      //   );
+      //   return;
+      // }
+
+      Get.dialog(
+        Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Print Note',
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _brandController,
+                    maxLength: 30,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan brand...',
+                      prefixIcon: const Icon(Icons.branding_watermark,
+                          color: Colors.indigo),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _addressController,
+                    maxLength: 50,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan alamat...',
+                      prefixIcon:
+                          const Icon(Icons.location_on, color: Colors.indigo),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _phoneNumberController,
+                    maxLength: 30,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan nomor telepon...',
+                      prefixIcon: const Icon(Icons.phone, color: Colors.indigo),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _cashierController,
+                    maxLength: 30,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan nama kasir...',
+                      prefixIcon:
+                          const Icon(Icons.person, color: Colors.indigo),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(closeOverlays: true),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.indigo),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Close',
+                            style: TextStyle(
+                                color: Colors.indigo,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            printNote(
+                              brand: _brandController.text,
+                              address: _addressController.text,
+                              phoneNumber: _phoneNumberController.text,
+                              cashier: _cashierController.text,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.print, size: 20),
+                          label: const Text(
+                            'Print',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        barrierDismissible: true,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to get printer status: $e',
+        backgroundColor: Colors.red[400],
+        colorText: Colors.white,
+        borderRadius: 8,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
+    }
+  }
+
+  void dialogScreenshot() async {
+    try {
+      // final status = await printController.checkStatus();
+
+      // if (!status['connection']) {
+      //   Get.snackbar(
+      //     'Failed',
+      //     'Pastikan anda sudah terhubung dengan printer',
+      //     backgroundColor: Colors.red[400],
+      //     colorText: Colors.white,
+      //     duration: const Duration(seconds: 3),
+      //     snackPosition: SnackPosition.BOTTOM,
+      //     margin: const EdgeInsets.all(16),
+      //   );
+      //   return;
+      // }
+
+      Get.dialog(
+        Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.edit_document,
+                        size: 28,
+                        color: Colors.indigo,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Masukkan Data',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Nomor',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _nomorController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 15,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan nomor...',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      prefixIcon:
+                          const Icon(Icons.numbers, color: Colors.indigo),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Jumlah Transfer',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _amountController,
+                    maxLength: 10,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: '10000',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      prefixIcon:
+                          const Icon(Icons.attach_money, color: Colors.indigo),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: Colors.indigo, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Get.back(closeOverlays: true),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.grey[300]!),
+                            ),
+                          ),
+                          child: const Text(
+                            'Close',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            if (_nomorController.text.isEmpty ||
+                                _amountController.text.isEmpty) {
+                              log('data tidak boleh kosong');
+                              return;
+                            }
+                            Get.to(
+                              () => ScreenshotPage(
+                                phoneNumber: _nomorController.text,
+                                amount: _amountController.text,
+                                freeOngkir: true,
+                                timestamp:
+                                    DateFormat("dd MMM yyyy, HH:mm", "id_ID")
+                                        .format(DateTime.now()),
+                              ),
+                            );
+                          },
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.indigo,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          label: const Text(
+                            'SEND',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        barrierDismissible: true,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to get printer status: $e',
+        backgroundColor: Colors.red[400],
+        colorText: Colors.white,
+        borderRadius: 8,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
+    }
+  }
+
+  void dialogShopping() async {
+    try {
+      Get.dialog(
+        Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.shopify,
+                            size: 28,
+                            color: Colors.indigo,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Shopify',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Column(
+                        children: List.generate(products.length, (index) {
+                          final product = products[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  height: 45,
+                                  width: 45,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.grey[200],
+                                    image: DecorationImage(
+                                      image: AssetImage(product.image),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Rp ${product.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}', // Format harga
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle),
+                                      color: Colors.grey,
+                                      onPressed: () {
+                                        setState(() {
+                                          if (product.quantity > 0) {
+                                            product.quantity--;
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    Text(
+                                      product.quantity.toString(),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle),
+                                      color: Colors.indigo,
+                                      onPressed: () {
+                                        setState(() {
+                                          product.quantity++;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Get.back(closeOverlays: true),
+                              style: TextButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey[300]!),
+                                ),
+                              ),
+                              child: const Text(
+                                'Close',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                for (var product in products) {
+                                  log(
+                                      'Nama: ${product.name}, Harga: ${product.price}, Jumlah: ${product.quantity}');
+                                }
+                                Get.back(closeOverlays: true);
+                              },
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: Colors.indigo,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              label: const Text(
+                                'SEND',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              icon: const Icon(Icons.send, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        barrierDismissible: true,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to show dialog: $e',
+        backgroundColor: Colors.red[400],
+        colorText: Colors.white,
+        borderRadius: 8,
+        margin: const EdgeInsets.all(16),
       );
     }
   }

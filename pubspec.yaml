@@ -41,6 +41,9 @@ dependencies:
   widgets_to_image: ^1.0.0
   get: ^4.6.6
   image_picker: ^1.1.2
+  intl: ^0.19.0
+  screenshot: ^3.0.0
+  share_plus: ^10.1.2
 
 dev_dependencies:
   flutter_test:
